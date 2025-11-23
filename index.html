@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Practice Quiz — Forces & Motion</title>
+  <style>
+    :root{--bg:#f3f6fb;--card:#ffffff;--accent:#2563eb;--correct:#16a34a;--wrong:#dc2626}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(180deg,#e8f0ff 0%,var(--bg) 100%);padding:20px}
+    .quiz-wrap{width:100%;max-width:720px;background:var(--card);border-radius:14px;box-shadow:0 8px 30px rgba(17,24,39,0.08);overflow:hidden}
+    header{padding:20px 24px;border-bottom:1px solid #eef2ff;background:linear-gradient(90deg,rgba(37,99,235,0.04),transparent)}
+    header h1{margin:0;font-size:20px;color:#0f172a}
+    header p{margin:6px 0 0;color:#475569;font-size:13px}
+    .progress{height:8px;background:#eef2ff;border-radius:999px;margin:14px 24px}
+    .progress > i{display:block;height:100%;background:var(--accent);width:0;border-radius:999px;transition:width .4s ease}
+
+    main{padding:28px 24px;min-height:260px;display:flex;flex-direction:column;gap:18px}
+    .qmeta{display:flex;justify-content:space-between;align-items:center;color:#374151;font-weight:600}
+    .question{font-size:18px;color:#0b1220;line-height:1.4}
+
+    .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+    .choice-btn{appearance:none;border:1px solid #e6eaf7;background:#fff;padding:14px;border-radius:10px;text-align:left;cursor:pointer;font-size:15px;color:#0f172a;transition:transform .06s ease,box-shadow .06s ease;box-shadow:0 1px 0 rgba(15,23,42,0.03)}
+    .choice-btn:active{transform:translateY(1px)}
+    .choice-btn.disabled{pointer-events:none;opacity:.9}
+    .choice-label{font-weight:700;margin-bottom:6px;display:block}
+    .choice-text{display:block;color:#334155}
+
+    .choice-btn.correct{border-color:rgba(16,185,129,0.18);background:linear-gradient(90deg,rgba(16,185,129,0.06),transparent);box-shadow:0 8px 20px rgba(16,185,129,0.06)}
+    .choice-btn.wrong{border-color:rgba(239,68,68,0.12);background:linear-gradient(90deg,rgba(239,68,68,0.03),transparent);box-shadow:0 8px 20px rgba(239,68,68,0.04)}
+
+    .tf-choices{grid-template-columns:1fr 1fr}
+
+    footer{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:#fbfdff;border-top:1px solid #eef2ff}
+    .btn{appearance:none;padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--accent);border:1px solid rgba(37,99,235,0.12)}
+
+    .result-screen{padding:32px;text-align:center}
+    .big-score{font-size:36px;font-weight:800;color:#0b1220}
+    .small-note{color:#475569;margin-top:8px}
+
+    /* responsive */
+    @media (max-width:520px){.choices{grid-template-columns:1fr}.choice-btn{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="quiz-wrap" id="app">
+    <header>
+      <h1>Forces & Motion — Practice Quiz</h1>
+      <p>Tap an answer. Selected choice will highlight green or red, then the next question appears automatically.</p>
+      <div class="progress"><i id="progBar" style="width:0%"></i></div>
+    </header>
+
+    <main id="main">
+      <!-- content rendered by JS -->
+    </main>
+
+    <footer id="footer">
+      <div style="display:flex;gap:10px;align-items:center">
+        <button id="restartBtn" class="btn secondary" style="display:none">Restart Quiz</button>
+        <div id="meta" style="color:#475569;font-weight:600"></div>
+      </div>
+      <div id="control" style="display:flex;gap:8px"></div>
+    </footer>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      {type:'mcq', q:"A force is balanced when:", choices:["Net force is zero","Net force is greater than zero","Forces move in the same direction","Gravity is acting"], answer:0},
+      {type:'mcq', q:"An unbalanced force causes an object to:", choices:["Stay at rest","Change motion","Remain constant","Stop immediately"], answer:1},
+      {type:'mcq', q:"Which is an example of a balanced force?", choices:["A car speeding up","A book resting on a table","A ball being kicked","A falling rock"], answer:1},
+      {type:'mcq', q:"Which is an example of an unbalanced force?", choices:["A box sliding because someone pushed it","A bag hanging still","A pencil lying on a desk","A parked motorcycle"], answer:0},
+      {type:'mcq', q:"Contact forces require:", choices:["No touching","Touching between objects","Magnetic field","Electric charge"], answer:1},
+      {type:'mcq', q:"Which is a contact force?", choices:["Friction","Gravity","Magnetism","Electric force"], answer:0},
+      {type:'mcq', q:"Which is a non-contact force?", choices:["Friction","Tension","Air resistance","Magnetism"], answer:3},
+      {type:'mcq', q:"Gravity is an example of a:", choices:["Contact force","Non-contact force","Balanced force","Vector force"], answer:1},
+      {type:'mcq', q:"Distance is defined as:", choices:["Straight-line length between two points","Total path covered","Shortest path","Direction of movement"], answer:1},
+      {type:'mcq', q:"Displacement is defined as:", choices:["Total path","How fast you move","Change in position in a straight line","Distance per time"], answer:2},
+      {type:'mcq', q:"If you walk 5 m east and 5 m west, your displacement is:", choices:["5 m","10 m","0 m","2 m"], answer:2},
+      {type:'mcq', q:"Which statement about distance is TRUE?", choices:["It can never be zero","It can be zero","It is always equal to displacement","It has direction"], answer:0},
+      {type:'mcq', q:"Which statement about displacement is TRUE?", choices:["It has no direction","It can be zero","It is always larger than distance","It measures total path"], answer:1},
+      {type:'mcq', q:"A force is measured in:", choices:["Grams","Joules","Newtons","Meters"], answer:2},
+      {type:'mcq', q:"Which situation describes balanced forces?", choices:["A stone falling","A car turning","A man pushing a wall that does not move","An apple rolling"], answer:2},
+      {type:'mcq', q:"Unbalanced forces can change an object’s:", choices:["Mass","Weight","Motion","Shape only"], answer:2},
+      {type:'mcq', q:"Earth’s gravity pulls objects:", choices:["Up","Down","Sideways","In circles"], answer:1},
+      {type:'mcq', q:"Air resistance is a type of:", choices:["Contact force","Non-contact force","Balanced force","Vector quantity"], answer:0},
+      {type:'mcq', q:"Which situation shows displacement?", choices:["Total steps walked in a day","Straight-line distance from start to end","Number of minutes walked","Path taken"], answer:1},
+      {type:'mcq', q:"Which example shows distance?", choices:["10 m north","14 m total path walked","5 m downward","2 m east"], answer:1},
+      {type:'mcq', q:"When two balanced forces act on an object, it will:", choices:["Speed up","Slow down","Change direction","Stay in the same motion"], answer:3},
+      {type:'mcq', q:"The sum of all forces acting on an object is called:", choices:["Gravity","Net force","Friction","Mass"], answer:1},
+      {type:'mcq', q:"A person pulling a rope is an example of:", choices:["Non-contact force","Contact force","Magnetic force","Static force"], answer:1},
+      {type:'mcq', q:"A ball thrown upward slows down because of:", choices:["Air pressure","Friction","Gravity","Tension"], answer:2},
+      {type:'tf', q:"Balanced forces cannot change an object’s motion.", answer:true},
+      {type:'tf', q:"Unbalanced forces can cause acceleration.", answer:true},
+      {type:'tf', q:"Gravity is a contact force.", answer:false},
+      {type:'tf', q:"Displacement can be zero even if you moved.", answer:true},
+      {type:'tf', q:"Friction is a contact force.", answer:true},
+      {type:'tf', q:"Non-contact forces require physical touching.", answer:false}
+    ];
+
+    let idx=0,score=0;
+    const total=QUESTIONS.length,MAIN=document.getElementById('main'),PROGBAR=document.getElementById('progBar'),META=document.getElementById('meta'),RESTART=document.getElementById('restartBtn');
+
+    function renderQuestion(){const item=QUESTIONS[idx];PROGBAR.style.width=`${Math.round((idx/total)*100)}%`;META.textContent=`Question ${idx+1} of ${total}`;if(!item){showResult();return;}if(item.type==='mcq')renderMCQ(item);else renderTF(item);}
+    function renderMCQ(item){MAIN.innerHTML=`<div class="qmeta"><div style="color:#0b1220">Topic: Forces & Motion</div><div style="color:#475569">Points: ${score}</div></div><div class="question">${escapeHtml(item.q)}</div><div class="choices" id="choices"></div>`;const choicesWrap=document.getElementById('choices');item.choices.forEach((txt,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML=`<span class="choice-label">${String.fromCharCode(65+i)}.</span><span class="choice-text">${escapeHtml(txt)}</span>`;btn.addEventListener('click',()=>handleChoice(btn,i===item.answer));choicesWrap.appendChild(btn);});}
+    function renderTF(item){MAIN.innerHTML=`<div class="qmeta"><div style="color:#0b1220">Topic: Forces & Motion</div><div style="color:#475569">Points: ${score}</div></div><div class="question">${escapeHtml(item.q)}</div><div class="choices tf-choices" id="choices"></div>`;const choicesWrap=document.getElementById('choices');['True','False'].forEach((label,i)=>{const val=(label==='True');const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML=`<span class="choice-label">${label}</span>`;btn.addEventListener('click',()=>handleChoice(btn,val===item.answer));choicesWrap.appendChild(btn);});}
+    function handleChoice(btn,isCorrect){const buttons=Array.from(document.querySelectorAll('.choice-btn'));buttons.forEach(b=>{b.classList.add('disabled');b.style.pointerEvents='none'});if(isCorrect){btn.classList.add('correct');score++;}else{btn.classList.add('wrong');const item=QUESTIONS[idx];if(item.type==='mcq'){const correctIndex=item.answer;const btns=document.querySelectorAll('.choice-btn');if(btns[correctIndex])btns[correctIndex].classList.add('correct');}else{const btns=document.querySelectorAll('.choice-btn');btns.forEach(b=>{if((b.textContent||'').trim().startsWith(item.answer?'True':'False'))b.classList.add('correct');});}}setTimeout(()=>{idx++;if(idx<total)renderQuestion();else showResult();},1500);}
+    function showResult(){PROGBAR.style.width='100%';MAIN.innerHTML=`<div class="result-screen"><div class="big-score">You scored ${score} / ${total}</div><div class="small-note">Percentage: ${Math.round((score/total)*100)}%</div><div style="margin-top:18px"> <button id="reviewBtn" class="btn secondary">Review Answers</button> <button id="againBtn" class="btn">Try Again</button></div></div>`;document.getElementById('againBtn').addEventListener('click',()=>restart());document.getElementById('reviewBtn').addEventListener('click',()=>renderReview());RESTART.style.display='inline-block';RESTART.onclick=restart;document.getElementById('meta').textContent='Completed';}
+    function renderReview(){let html='<div style="padding:18px;display:flex;flex-direction:column;gap:14px">';QUESTIONS.forEach((it,i)=>{html+=`<div style="padding:12px;border-radius:10px;background:#fbfdff;border:1px solid #eef2ff"><div style="font-weight:700">Q${i+1}. ${escapeHtml(it.q)}</div>`;if(it.type==='mcq'){it.choices.forEach((c,ci)=>{const isAns=ci===it.answer;html+=`<div style="margin-top:6px">${String.fromCharCode(65+ci)}. ${escapeHtml(c)} ${isAns? '<strong style="color:var(--correct)"> (Answer)</strong>':''}</div>`;});}else{html+=`<div style="margin-top:6px">Answer: <strong>${it.answer?'True':'False'}</strong></div>`;}html+=`</div>`;});html+='</div>';MAIN.innerHTML=html;PROGBAR.style.width='100%';document.getElementById('meta').textContent='Review';}
+    function restart(){idx=0;score=0;RESTART.style.display='none';PROGBAR.style.width='0%';renderQuestion();}
+    function escapeHtml(s){return(s+'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#39;"}[c]));}
+    renderQuestion();
+    RESTART.addEventListener('click',restart);
+  </script>
+</body>
+</html>
