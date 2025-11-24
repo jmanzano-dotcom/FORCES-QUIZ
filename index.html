@@ -14,41 +14,58 @@
     header p{margin:6px 0 0;color:#475569;font-size:13px}
     .progress{height:8px;background:#eef2ff;border-radius:999px;margin:14px 24px}
     .progress > i{display:block;height:100%;background:var(--accent);width:0;border-radius:999px;transition:width .4s ease}
+
     main{padding:28px 24px;min-height:260px;display:flex;flex-direction:column;gap:18px}
     .qmeta{display:flex;justify-content:space-between;align-items:center;color:#374151;font-weight:600}
     .question{font-size:18px;color:#0b1220;line-height:1.4}
+
     .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
     .choice-btn{appearance:none;border:1px solid #e6eaf7;background:#fff;padding:14px;border-radius:10px;text-align:left;cursor:pointer;font-size:15px;color:#0f172a;transition:transform .06s ease,box-shadow .06s ease;box-shadow:0 1px 0 rgba(15,23,42,0.03)}
     .choice-btn:active{transform:translateY(1px)}
     .choice-btn.disabled{pointer-events:none;opacity:.9}
     .choice-label{font-weight:700;margin-bottom:6px;display:block}
     .choice-text{display:block;color:#334155}
+
     .choice-btn.correct{border-color:rgba(16,185,129,0.18);background:linear-gradient(90deg,rgba(16,185,129,0.06),transparent);box-shadow:0 8px 20px rgba(16,185,129,0.06)}
     .choice-btn.wrong{border-color:rgba(239,68,68,0.12);background:linear-gradient(90deg,rgba(239,68,68,0.03),transparent);box-shadow:0 8px 20px rgba(239,68,68,0.04)}
+
     .tf-choices{grid-template-columns:1fr 1fr}
+
     footer{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:#fbfdff;border-top:1px solid #eef2ff}
     .btn{appearance:none;padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
     .btn.secondary{background:transparent;color:var(--accent);border:1px solid rgba(37,99,235,0.12)}
+
     .result-screen{padding:32px;text-align:center}
     .big-score{font-size:36px;font-weight:800;color:#0b1220}
     .small-note{color:#475569;margin-top:8px}
+
+    /* responsive */
     @media (max-width:520px){.choices{grid-template-columns:1fr}.choice-btn{padding:12px}}
+    .name-input{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+    .name-input input{padding:12px;border-radius:8px;border:1px solid #ccc;font-size:16px}
   </style>
 </head>
 <body>
   <div class="quiz-wrap" id="app">
     <header>
       <h1>Forces & Motion — Practice Quiz</h1>
-      <p>Tap an answer. Selected choice will highlight green or red, then the next question appears automatically.</p>
+      <p>Enter your name to start the quiz.</p>
       <div class="progress"><i id="progBar" style="width:0%"></i></div>
     </header>
-    <main id="main"></main>
+
+    <main id="main">
+      <div class="name-input">
+        <label for="studentName">Your Name:</label>
+        <input type="text" id="studentName" placeholder="Enter your full name">
+        <button class="btn" id="startBtn">Start Quiz</button>
+      </div>
+    </main>
+
     <footer id="footer">
       <div style="display:flex;gap:10px;align-items:center">
         <button id="restartBtn" class="btn secondary" style="display:none">Restart Quiz</button>
         <div id="meta" style="color:#475569;font-weight:600"></div>
       </div>
-      <div id="control" style="display:flex;gap:8px"></div>
     </footer>
   </div>
 
@@ -86,106 +103,137 @@
       {type:'tf', q:"Non-contact forces require physical touching.", answer:false}
     ];
 
-    let idx=0, score=0;
-    const total=QUESTIONS.length;
-    const MAIN=document.getElementById('main');
-    const PROGBAR=document.getElementById('progBar');
-    const META=document.getElementById('meta');
-    const RESTART=document.getElementById('restartBtn');
+    let idx = 0;
+    let score = 0;
+    let studentName = '';
+    const total = QUESTIONS.length;
+    const MAIN = document.getElementById('main');
+    const PROGBAR = document.getElementById('progBar');
+    const META = document.getElementById('meta');
+    const RESTART = document.getElementById('restartBtn');
+    const STARTBTN = document.getElementById('startBtn');
 
-    function renderQuestion(){
-      const item=QUESTIONS[idx];
-      PROGBAR.style.width=`${Math.round((idx/total)*100)}%`;
-      META.textContent=`Question ${idx+1} of ${total}`;
-      if(!item){ showResult(); return; }
-      if(item.type==='mcq') renderMCQ(item); else renderTF(item);
+    STARTBTN.addEventListener('click', ()=>{
+      const nameInput = document.getElementById('studentName').value.trim();
+      if(nameInput===''){ alert('Please enter your name'); return;}
+      studentName = nameInput;
+      renderQuestion();
+    });
+
+    function renderQuestion() {
+      const item = QUESTIONS[idx];
+      PROGBAR.style.width = `${Math.round((idx/total)*100)}%`;
+      META.textContent = `Question ${idx+1} of ${total}`;
+
+      if (!item) { showResult(); return; }
+
+      if (item.type === 'mcq') renderMCQ(item);
+      else renderTF(item);
     }
 
     function renderMCQ(item){
-      MAIN.innerHTML=`
+      MAIN.innerHTML = `
         <div class="qmeta"><div style="color:#0b1220">Topic: Forces & Motion</div><div style="color:#475569">Points: ${score}</div></div>
         <div class="question">${escapeHtml(item.q)}</div>
-        <div class="choices" id="choices"></div>`;
-      const choicesWrap=document.getElementById('choices');
-      item.choices.forEach((txt,i)=>{
-        const btn=document.createElement('button');
-        btn.className='choice-btn';
-        btn.innerHTML=`<span class="choice-label">${String.fromCharCode(65+i)}.</span><span class="choice-text">${escapeHtml(txt)}</span>`;
-        btn.addEventListener('click',()=>handleChoice(btn,i===item.answer));
+        <div class="choices" id="choices"></div>
+      `;
+      const choicesWrap = document.getElementById('choices');
+      item.choices.forEach((txt, i)=>{
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = `<span class="choice-label">${String.fromCharCode(65+i)}.</span><span class="choice-text">${escapeHtml(txt)}</span>`;
+        btn.addEventListener('click', ()=>handleChoice(btn, i===item.answer));
         choicesWrap.appendChild(btn);
       });
     }
 
     function renderTF(item){
-      MAIN.innerHTML=`
+      MAIN.innerHTML = `
         <div class="qmeta"><div style="color:#0b1220">Topic: Forces & Motion</div><div style="color:#475569">Points: ${score}</div></div>
         <div class="question">${escapeHtml(item.q)}</div>
-        <div class="choices tf-choices" id="choices"></div>`;
-      const choicesWrap=document.getElementById('choices');
-      ['True','False'].forEach((label,i)=>{
-        const val=(label==='True');
-        const btn=document.createElement('button');
-        btn.className='choice-btn';
-        btn.innerHTML=`<span class="choice-label">${label}</span>`;
-        btn.addEventListener('click',()=>handleChoice(btn,val===item.answer));
+        <div class="choices tf-choices" id="choices"></div>
+      `;
+      const choicesWrap = document.getElementById('choices');
+      ['True','False'].forEach((label, i)=>{
+        const val = (label==='True');
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = `<span class="choice-label">${label}</span>`;
+        btn.addEventListener('click', ()=>handleChoice(btn, val===item.answer));
         choicesWrap.appendChild(btn);
       });
     }
 
-    function handleChoice(btn,isCorrect){
-      const buttons=Array.from(document.querySelectorAll('.choice-btn'));
-      buttons.forEach(b=>{b.classList.add('disabled');b.style.pointerEvents='none';});
-      if(isCorrect){ btn.classList.add('correct'); score++; }
-      else{
+    function handleChoice(btn, isCorrect){
+      const buttons = Array.from(document.querySelectorAll('.choice-btn'));
+      buttons.forEach(b=>{b.classList.add('disabled');b.style.pointerEvents='none'});
+
+      if (isCorrect){
+        btn.classList.add('correct');
+        score++;
+      } else {
         btn.classList.add('wrong');
-        const item=QUESTIONS[idx];
-        if(item.type==='mcq'){ const correctIndex=item.answer; buttons[correctIndex].classList.add('correct'); }
-        else{ buttons.forEach(b=>{ if((b.textContent||'').trim().startsWith(item.answer?'True':'False')) b.classList.add('correct'); }); }
+        const item = QUESTIONS[idx];
+        if (item.type==='mcq'){
+          const correctIndex = item.answer;
+          const btns = document.querySelectorAll('.choice-btn');
+          if (btns[correctIndex]) btns[correctIndex].classList.add('correct');
+        } else {
+          const btns = document.querySelectorAll('.choice-btn');
+          btns.forEach(b=>{
+            if ((b.textContent||'').trim().startsWith(item.answer? 'True' : 'False')) b.classList.add('correct');
+          });
+        }
       }
-      setTimeout(()=>{ idx++; if(idx<total) renderQuestion(); else showResult(); },1500);
+
+      setTimeout(()=>{
+        idx++;
+        if (idx < total) renderQuestion();
+        else showResult();
+      },1500);
     }
 
     function showResult(){
-      PROGBAR.style.width='100%';
-      MAIN.innerHTML=`
+      PROGBAR.style.width = '100%';
+      MAIN.innerHTML = `
         <div class="result-screen">
-          <div class="big-score">You scored ${score} / ${total}</div>
+          <div class="big-score">Congratulations, ${escapeHtml(studentName)}!<br>You scored ${score} / ${total}</div>
           <div class="small-note">Percentage: ${Math.round((score/total)*100)}%</div>
-          <div style="margin-top:18px"> <button id="reviewBtn" class="btn secondary">Review Answers</button> <button id="againBtn" class="btn">Try Again</button></div>
-        </div>`;
-      document.getElementById('againBtn').addEventListener('click',()=>restart());
-      document.getElementById('reviewBtn').addEventListener('click',()=>renderReview());
-      RESTART.style.display='inline-block';
-      RESTART.onclick=restart;
-      document.getElementById('meta').textContent='Completed';
+          <div style="margin-top:18px"><button id="reviewBtn" class="btn secondary">Review Answers</button> <button id="againBtn" class="btn">Try Again</button></div>
+        </div>
+      `;
+
+      document.getElementById('againBtn').addEventListener('click', ()=>restart());
+      document.getElementById('reviewBtn').addEventListener('click', ()=>renderReview());
+      RESTART.style.display = 'inline-block';
+      RESTART.onclick = restart;
+      document.getElementById('meta').textContent = 'Completed';
     }
 
     function renderReview(){
-      let html='<div style="padding:18px;display:flex;flex-direction:column;gap:14px">';
+      let html = '<div style="padding:18px;display:flex;flex-direction:column;gap:14px">';
       QUESTIONS.forEach((it,i)=>{
-        html+=`<div style="padding:12px;border-radius:10px;background:#fbfdff;border:1px solid #eef2ff">`;
-        html+=`<div style="font-weight:700">Q${i+1}. ${escapeHtml(it.q)}</div>`;
-        if(it.type==='mcq'){
+        html += `<div style="padding:12px;border-radius:10px;background:#fbfdff;border:1px solid #eef2ff">`;
+        html += `<div style="font-weight:700">Q${i+1}. ${escapeHtml(it.q)}</div>`;
+        if (it.type==='mcq'){
           it.choices.forEach((c,ci)=>{
-            const isAns=ci===it.answer;
-            html+=`<div style="margin-top:6px">${String.fromCharCode(65+ci)}. ${escapeHtml(c)} ${isAns? '<strong style="color:var(--correct)"> (Answer)</strong>':''}</div>`;
+            const isAns = ci===it.answer;
+            html += `<div style="margin-top:6px">${String.fromCharCode(65+ci)}. ${escapeHtml(c)} ${isAns? '<strong style="color:var(--correct)"> (Answer)</strong>':''}</div>`;
           });
-        } else{
-          html+=`<div style="margin-top:6px">Answer: <strong>${it.answer?'True':'False'}</strong></div>`;
+        } else {
+          html += `<div style="margin-top:6px">Answer: <strong>${it.answer? 'True':'False'}</strong></div>`;
         }
-        html+='</div>';
+        html += `</div>`;
       });
-      html+='</div>';
-      MAIN.innerHTML=html;
-      PROGBAR.style.width='100%';
-      META.textContent='Review';
+      html += '</div>';
+      MAIN.innerHTML = html;
+      PROGBAR.style.width = '100%';
+      document.getElementById('meta').textContent = 'Review';
     }
 
     function restart(){ idx=0; score=0; RESTART.style.display='none'; PROGBAR.style.width='0%'; renderQuestion(); }
-    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 
-    renderQuestion();
-    RESTART.addEventListener('click', restart);
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
   </script>
 </body>
 </html>
